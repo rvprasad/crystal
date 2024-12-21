@@ -1,5 +1,6 @@
 require "spec"
 require "spec/helpers/iterate"
+require "../spec_helper"
 
 module SomeInterface; end
 
@@ -1364,6 +1365,18 @@ describe "Enumerable" do
     it { [1, 2, 3].sum(4.5).should eq(10.5) }
     it { (1..3).sum { |x| x * 2 }.should eq(12) }
     it { (1..3).sum(1.5) { |x| x * 2 }.should eq(13.5) }
+    it { [1, 3_u64].sum(0_i32).should eq(4_u32) }
+    it { [1, 3].sum(0_u64).should eq(4_u64) }
+    it { [1, 10000000000_u64].sum(0_u64).should eq(10000000001) }
+    it "raises if union types are summed" do
+      exc = assert_error <<-CRYSTAL,
+        require "prelude"
+        [1, 10000000000_u64].sum
+        CRYSTAL
+        "Enumerable#sum() does support Union types. Instead, " +
+        "use Enumerable#sum(initial) with an initial value of " +
+        "the expected type of the sum call."
+    end
 
     it "uses additive_identity from type" do
       typeof([1, 2, 3].sum).should eq(Int32)

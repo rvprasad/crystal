@@ -2292,7 +2292,11 @@ module Enumerable(T)
     # if the type is a union.
     def self.first
       {% if X.union? %}
-        {{X.union_types.first}}
+        {{ 
+          raise("Enumerable#sum() does support Union types. Instead, " +
+                 "use Enumerable#sum(initial) with an initial value of " +
+                 "the expected type of the sum call.") 
+        }}
       {% else %}
         X
       {% end %}
