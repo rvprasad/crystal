@@ -1819,8 +1819,15 @@ module Enumerable(T)
   # ([] of Int32).sum { |x| x + 1 } # => 0
   # ```
   def sum(& : T ->)
-    sum(additive_identity(Reflect(typeof(yield Enumerable.element_type(self))))) do |value|
-      yield value
+    reflect = Reflect(typeof(yield Enumerable.element_type(self)))
+    if reflect.type == String 
+      sum("") do |value|
+        yield value
+      end
+    else
+      sum(additive_identity(reflect)) do |value|
+        yield value
+      end
     end
   end
 
@@ -2296,6 +2303,7 @@ module Enumerable(T)
     # For now, Reflect is used to reject union types in `#sum()` and
     # `#product()` methods.
     def self.type
+      {{ p!(X) }}
       {% if X.union? %}
         {{
           raise("`Enumerable#sum()` and `#product()` do not support Union " +
