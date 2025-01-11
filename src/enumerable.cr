@@ -1757,7 +1757,10 @@ module Enumerable(T)
   # ```
   def sum
     {% if T == String %}
-      # optimize for string
+      {{
+        warning("`Enumerable#sum` does not support non-additive types. " +
+                "To join an enumerable of strings, use `Enumerable#join`.")
+      }}
       join
     {% elsif T < Array %}
       # optimize for array
@@ -1775,7 +1778,8 @@ module Enumerable(T)
     if type.responds_to? :additive_identity
       type.additive_identity
     else
-      type.zero
+      raise ArgumentError.new("`Enumerable#sum` does not support " +
+                              "non-additive types.")
     end
   end
 
@@ -1818,17 +1822,8 @@ module Enumerable(T)
   # ```
   # ([] of Int32).sum { |x| x + 1 } # => 0
   # ```
-  def sum(& : T ->)
-    reflect = Reflect(typeof(yield Enumerable.element_type(self)))
-    if reflect.type == String 
-      sum("") do |value|
-        yield value
-      end
-    else
-      sum(additive_identity(reflect)) do |value|
-        yield value
-      end
-    end
+  def sum(&block : T -> _)
+    sum(additive_identity(Reflect(typeof(yield Enumerable.element_type(self)))), &block)
   end
 
   # Adds *initial* and all results of the passed block for each element in the collection.
@@ -1844,7 +1839,7 @@ module Enumerable(T)
   # ```
   # ([] of String).sum(1) { |name| name.size } # => 1
   # ```
-  def sum(initial, & : T ->)
+  def sum(initial, & : T -> _)
     reduce(initial) { |memo, e| memo + (yield e) }
   end
 
@@ -2303,7 +2298,6 @@ module Enumerable(T)
     # For now, Reflect is used to reject union types in `#sum()` and
     # `#product()` methods.
     def self.type
-      {{ p!(X) }}
       {% if X.union? %}
         {{
           raise("`Enumerable#sum()` and `#product()` do not support Union " +

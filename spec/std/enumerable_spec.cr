@@ -1369,7 +1369,7 @@ describe "Enumerable" do
     it { [1, 3].sum(0_u64).should eq(4_u64) }
     it { [1, 10000000000_u64].sum(0_u64).should eq(10000000001) }
     it "raises if union types are summed", tags: %w[slow] do
-      exc = assert_error <<-CRYSTAL,
+      assert_error <<-CRYSTAL,
         require "prelude"
         [1, 10000000000_u64].sum
         CRYSTAL
@@ -1384,28 +1384,21 @@ describe "Enumerable" do
     it { [1, 2].sum { |x| 2_u64 * x }.should eq(6_u64) }
     it { [1, 2].sum(1) { |x| 2_u64 * x }.should eq(7_i32) }
 
-    it { {"a", "b", 3}.sum(&.to_s).should eq("ab3") }
-    it { ["a", "b", 3].sum(&.to_s).should eq("ab3") }
-    it { [1, 2, 3].sum(&.to_s).should eq("123") }
-    it { ["a", "b", "c"].sum(&.length).should eq(3) }
-    it "raises if enumerable of different types are summed", tags: %w[slow] do
-      exc = assert_error <<-CRYSTAL,
+    it { ["a", "b", "c"].sum(&.size).should eq(3) }
+
+    it "raises if non-additive values are summed", tags: %w[slow] do
+      assert_warning <<-CRYSTAL,
         require "prelude"
-        ["a", "b", 3].sum()
+        ["a", "b", "c"].sum
         CRYSTAL
-        "`Enumerable#sum()` and `#product()` do not support heterogeneous " +
-        "enumerables. Instead, use `Enumerable#sum(&)` and `#product(&)`, " +
-        "respectively, with an appropriate transformation block."
+        "`Enumerable#sum` does not support non-additive types. " +
+        "To join an enumerable of strings, use `Enumerable#join`."
     end
 
-    it "raises if enumerable of union types are summed", tags: %w[slow] do
-      exc = assert_error <<-CRYSTAL,
-        require "prelude"
-        ["a", "b", 3].sum("")
-        CRYSTAL
-        "`Enumerable#sum()` and `#product()` do not support heterogeneous " +
-        "enumerables. Instead, use `Enumerable#sum(&)` and `#product(&)`, " +
-        "respectively, with an appropriate transformation block."
+    it "raises if non-additive values are summed", tags: %w[slow] do
+      expect_raises ArgumentError, "`Enumerable#sum` does not support non-additive types." do
+        [1, 2, 3].sum(&.to_s)
+      end
     end
 
     it "uses additive_identity from type" do
@@ -1453,7 +1446,7 @@ describe "Enumerable" do
     it { [1, 3].product(3_u64).should eq(9_u64) }
     it { [1, 10000000000_u64].product(3_u64).should eq(30000000000_u64) }
     it "raises if union types are multiplied", tags: %w[slow] do
-      exc = assert_error <<-CRYSTAL,
+      assert_error <<-CRYSTAL,
         require "prelude"
         [1, 10000000000_u64].product
         CRYSTAL
@@ -1463,7 +1456,7 @@ describe "Enumerable" do
         "of the intended type of the call."
     end
     it { [1, 2].product { |x| 2_u64 * x }.should eq(8_u64) }
-    it { [1, 2].product(2) { |x| 2_u64 * x}.should eq(16_i32) }
+    it { [1, 2].product(2) { |x| 2_u64 * x }.should eq(16_i32) }
     it { [1, 2].product { |x| 2_u64 * x }.should eq(8_u64) }
     it { [1, 2].product(2) { |x| 2_u64 * x }.should eq(16_i32) }
   end
